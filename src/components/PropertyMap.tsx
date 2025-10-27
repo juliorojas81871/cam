@@ -12,11 +12,13 @@ interface MapComponentProps {
 }
 
 // Custom marker class factory function to avoid "google is not defined" error
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function createCustomMarkerClass() {
   if (typeof window === 'undefined' || !(window as any).google) {
     return null;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   class CustomMarker extends (window as any).google.maps.OverlayView {
     position: google.maps.LatLngLiteral;
     property: Owned;
@@ -103,12 +105,12 @@ function createCustomMarkerClass() {
 const MapComponent: React.FC<MapComponentProps> = ({ properties, center, zoom }) => {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [infoWindow, setInfoWindow] = useState<google.maps.InfoWindow | null>(null);
-  const markersRef = useRef<any[]>([]);
+  const markersRef = useRef<google.maps.Marker[]>([]);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const currentHoveredMarker = useRef<any>(null);
+  const currentHoveredMarker = useRef<google.maps.Marker | null>(null);
 
   // Helper functions for stable hover behavior
-  const showInfoWindow = useCallback((property: Owned, marker: any, position: google.maps.LatLngLiteral | null = null) => {
+  const showInfoWindow = useCallback((property: Owned, marker: google.maps.Marker, position: google.maps.LatLngLiteral | null = null) => {
     if (!infoWindow) return;
 
     // Clear any pending hide timeout
@@ -197,9 +199,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ properties, center, zoom })
     if (map && properties.length > 0) {
       // Clear existing markers
       markersRef.current.forEach(marker => {
-        if (marker.map) {
-          marker.map = null;
-        } else if (marker.setMap) {
+        if (marker.setMap) {
           marker.setMap(null);
         }
       });
@@ -244,6 +244,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ properties, center, zoom })
               </div>
             `;
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const marker = new (window.google as any).maps.marker.AdvancedMarkerElement({
               position,
               map,
@@ -287,8 +288,10 @@ const MapComponent: React.FC<MapComponentProps> = ({ properties, center, zoom })
   useEffect(() => {
     return () => {
       markersRef.current.forEach(marker => {
-        if (marker.map) {
+        if (marker instanceof google.maps.marker.AdvancedMarkerElement) {
           marker.map = null;
+        } else if (marker instanceof google.maps.OverlayView) {
+          marker.setMap(null);
         }
       });
 

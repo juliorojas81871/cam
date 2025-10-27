@@ -127,13 +127,12 @@ export function cleanBuildingName(name: string | null | undefined): string | nul
 }
 
 // Process a row of data and add cleaned building name fields
-export function processRowData(row: Record<string, any>): Record<string, any> {
+export function processRowData(row: Record<string, unknown>): Record<string, unknown> {
   const assetName = row['Real Property Asset Name'] || '';
 
   return {
     ...row,
-    cleanedBuildingName: cleanBuildingName(assetName),
-    addressInName: hasAddressInName(assetName)
+    cleanedBuildingName: cleanBuildingName(assetName as string),
+    addressInName: hasAddressInName(assetName as string)
   };
 }
-

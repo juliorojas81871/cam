@@ -11,7 +11,10 @@
     "db:setup": "node scripts/setup-db.js",
     "db:import": "node scripts/import-data.js",
     "db:init": "npm run db:setup && npm run db:import",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
@@ -36,13 +39,19 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.1.0",
+    "@vitest/ui": "^4.0.4",
     "drizzle-kit": "^0.31.5",
     "eslint": "^9",
     "eslint-config-next": "16.0.0",
+    "jsdom": "^27.0.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.0.4"
   }
 }

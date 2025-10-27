@@ -348,7 +348,6 @@ async function importLeases() {
   // Process lease records efficiently
   let newLeaseRecords = [];
   let updatedLeaseRecords = [];
-  let duplicateAddressCount = 0;
 
   for (const leaseRow of processedData) {
     const mappedLease = mapLeaseData(leaseRow);
@@ -356,7 +355,6 @@ async function importLeases() {
     const existingLeaseId = existingAddressMap.get(mappedLease.streetAddress);
 
     if (existingLeaseId) {
-      duplicateAddressCount++;
       updatedLeaseRecords.push({
         id: existingLeaseId,
         leaseNumber: mappedLease.leaseNumber,
@@ -368,7 +366,7 @@ async function importLeases() {
       newLeaseRecords.push(mappedLease);
     }
   }
-  
+
   // Update existing lease records
   if (updatedLeaseRecords.length > 0) {
     const updateBatchSize = 100;

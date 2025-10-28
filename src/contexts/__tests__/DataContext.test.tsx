@@ -3,7 +3,8 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { DataProvider, useData } from '../DataContext';
 
 // Mock fetch
-global.fetch = vi.fn();
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
 
 describe('DataContext', () => {
   beforeEach(() => {
@@ -11,7 +12,7 @@ describe('DataContext', () => {
   });
 
   it('should provide loading state initially', async () => {
-    (global.fetch as unknown as typeof fetch).mockImplementation(() =>
+    mockFetch.mockImplementation(() =>
       Promise.resolve({
         json: () => Promise.resolve([]),
         ok: true,
@@ -27,7 +28,7 @@ describe('DataContext', () => {
   });
 
   it('should have data fetching structure', async () => {
-    (global.fetch as unknown as typeof fetch).mockImplementation(() =>
+    mockFetch.mockImplementation(() =>
       Promise.resolve({
         json: () => Promise.resolve([]),
         ok: true,
@@ -45,7 +46,7 @@ describe('DataContext', () => {
   });
 
   it('should handle fetch errors', async () => {
-    (global.fetch as unknown as typeof fetch).mockImplementation(() =>
+    mockFetch.mockImplementation(() =>
       Promise.reject(new Error('Network error'))
     );
 
@@ -61,7 +62,7 @@ describe('DataContext', () => {
   });
 
   it('should have correct data structures', async () => {
-    (global.fetch as unknown as typeof fetch).mockImplementation(() =>
+    mockFetch.mockImplementation(() =>
       Promise.resolve({
         json: () => Promise.resolve([]),
         ok: true,

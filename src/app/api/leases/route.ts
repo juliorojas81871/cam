@@ -4,7 +4,7 @@ import { db, schema } from '@/lib/db';
 export async function GET() {
   try {
     const leases = await db.select().from(schema.leases);
-    
+
     return NextResponse.json({
       data: leases,
     });

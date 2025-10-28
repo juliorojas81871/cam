@@ -1,15 +1,13 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
-import { 
-  Box, 
-  Paper, 
-  Typography, 
-  Alert, 
+import styles from './page.module.css';
+import {
+  Box,
+  Paper,
+  Typography,
+  Alert,
   FormControl,
   InputLabel,
   Select,
@@ -17,6 +15,8 @@ import {
   CircularProgress,
   SelectChangeEvent,
   Snackbar,
+  Pagination,
+  Stack,
 } from '@mui/material';
 import { useData } from '@/contexts/DataContext';
 
@@ -40,14 +40,11 @@ interface MapComponentProps {
   zoom: number;
 }
 
-// Custom marker class factory function to avoid "google is not defined" error
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function createCustomMapMarkerClass() {
   if (typeof window === 'undefined' || !(window as any).google) {
     return null;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   class CustomMapMarker extends (window as any).google.maps.OverlayView {
     position: google.maps.LatLngLiteral;
     property: CombinedProperty;
@@ -87,7 +84,6 @@ function createCustomMapMarkerClass() {
           border-radius: 50%;
           box-shadow: 0 2px 8px rgba(0,0,0,0.4);
           position: relative;
-          transition: transform 0.2s ease;
         ">
           <div style="
             position: absolute;
@@ -108,10 +104,6 @@ function createCustomMapMarkerClass() {
       });
 
       this.div.addEventListener('mouseover', () => {
-        if (this.div) {
-          this.div.style.transform = 'scale(1.2)';
-        }
-
         if (this.infoWindow) {
           this.infoWindow.setContent(`
             <div style="padding: 12px; max-width: 280px;">
@@ -133,9 +125,6 @@ function createCustomMapMarkerClass() {
       });
 
       this.div.addEventListener('mouseout', () => {
-        if (this.div) {
-          this.div.style.transform = 'scale(1)';
-        }
         if (this.infoWindow) {
           this.infoWindow.close();
         }
@@ -190,9 +179,14 @@ const MapComponent: React.FC<MapComponentProps> = ({ properties, center, zoom })
       });
       setMap(newMap);
 
-      // Inject styles to improve InfoWindow positioning
       const style = document.createElement('style');
       style.innerHTML = `
+        .gm-style .gm-style-iw {
+          pointer-events: none !important;
+        }
+        .gm-style .gm-ui-hover-effect {
+          display: none !important;
+        }
         .gm-style-iw-c {
           padding: 0 !important;
         }
@@ -289,7 +283,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ properties, center, zoom })
   }, [map, streetView, isLoadingStreetView, infoWindow]);
 
   useEffect(() => {
-    if (map) {
+    if (map && properties && properties.length > 0) {
       markersRef.current.forEach(marker => {
         if (marker.setMap) {
           marker.setMap(null);
@@ -301,9 +295,6 @@ const MapComponent: React.FC<MapComponentProps> = ({ properties, center, zoom })
       });
       markersRef.current = [];
 
-      if (properties.length === 0) {
-        return;
-      }
       const newMarkers = properties.map(property => {
         if (!property.latitude || !property.longitude) return null;
 
@@ -327,8 +318,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ properties, center, zoom })
                 box-shadow: 0 2px 8px rgba(0,0,0,0.4);
                 cursor: pointer;
                 position: relative;
-                transition: transform 0.2s ease;
-              " onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">
+              ">
                 <div style="
                   position: absolute;
                   bottom: 100%;
@@ -389,7 +379,6 @@ const MapComponent: React.FC<MapComponentProps> = ({ properties, center, zoom })
           }
         }
 
-        // Fallback to custom overlay marker
         const CustomMapMarkerClass = createCustomMapMarkerClass();
         if (CustomMapMarkerClass) {
           return new CustomMapMarkerClass(position, map, property, openStreetView, infoWindow);
@@ -423,15 +412,8 @@ const MapComponent: React.FC<MapComponentProps> = ({ properties, center, zoom })
 
   return (
     <Box>
-      <div ref={mapRef} style={{ width: '100%', height: '600px', borderRadius: '8px' }} />
-      <div id="street-view" style={{
-        width: '100%',
-        height: '0px',
-        overflow: 'hidden',
-        borderRadius: '8px',
-        marginTop: '16px',
-        transition: 'height 0.3s ease'
-      }} />
+      <div ref={mapRef} className={styles.mapContainer} />
+      <div id="street-view" className={styles.streetViewContainer} />
 
       <Snackbar
         open={showToast}
@@ -454,6 +436,9 @@ const MapComponent: React.FC<MapComponentProps> = ({ properties, center, zoom })
 export default function MapPage() {
   const { owned, leases, loading, error } = useData();
   const [propertyTypeFilter, setPropertyTypeFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const PROPERTIES_PER_PAGE = 200;
 
   const allProperties = useMemo<CombinedProperty[]>(() => {
     if (!owned || !leases) {
@@ -508,8 +493,20 @@ export default function MapPage() {
     });
   }, [allProperties, propertyTypeFilter]);
 
+  const paginatedProperties = useMemo(() => {
+    const startIndex = (currentPage - 1) * PROPERTIES_PER_PAGE;
+    return filteredProperties.slice(startIndex, startIndex + PROPERTIES_PER_PAGE);
+  }, [filteredProperties, currentPage]);
+
+  const totalPages = Math.ceil(filteredProperties.length / PROPERTIES_PER_PAGE);
+
+  const handlePageChange = (event: unknown, value: number) => {
+    setCurrentPage(value);
+  };
+
   const handlePropertyTypeFilterChange = (event: SelectChangeEvent) => {
     setPropertyTypeFilter(event.target.value);
+    setCurrentPage(1);
   };
 
   const center = useMemo(() => {
@@ -537,7 +534,7 @@ export default function MapPage() {
       );
     }
 
-    return <MapComponent properties={filteredProperties} center={center} zoom={zoom} />;
+    return <MapComponent properties={paginatedProperties} center={center} zoom={zoom} />;
   };
 
   if (loading) {
@@ -566,7 +563,6 @@ export default function MapPage() {
         Interactive map showing all property locations with Street View integration
       </Typography>
 
-      {/* Filters */}
       <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
         <FormControl size="small" sx={{ minWidth: 150 }}>
           <InputLabel>Property Type</InputLabel>
@@ -582,11 +578,11 @@ export default function MapPage() {
         </FormControl>
 
         <Typography variant="body2" color="text.secondary">
-          Showing {filteredProperties.length} of {allProperties.length} properties
+          Showing {paginatedProperties.length} of {filteredProperties.length} properties 
+          {totalPages > 1 && ` (Page ${currentPage} of ${totalPages})`}
         </Typography>
       </Box>
 
-      {/* Legend */}
       <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box sx={{
@@ -612,7 +608,6 @@ export default function MapPage() {
         </Box>
       </Box>
 
-      {/* Map */}
       <Paper sx={{ p: 3 }}>
         <Typography variant="h6" gutterBottom>
           Interactive Property Map
@@ -624,6 +619,25 @@ export default function MapPage() {
           apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}
           render={render}
         />
+
+        {totalPages > 1 && (
+          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+            <Stack spacing={2} alignItems="center">
+              <Typography variant="body2" color="text.secondary">
+                Page {currentPage} of {totalPages} • {PROPERTIES_PER_PAGE} properties per page
+              </Typography>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={handlePageChange}
+                color="primary"
+                size="large"
+                showFirstButton
+                showLastButton
+              />
+            </Stack>
+          </Box>
+        )}
       </Paper>
     </Box>
   );

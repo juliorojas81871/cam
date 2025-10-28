@@ -108,18 +108,18 @@ export default function LeasedPropertiesPage() {
       const hasLeaseId = lease.leaseNumber || lease.id || lease.realPropertyAssetName;
       const hasEffectiveDate = lease.leaseEffectiveDate;
       const hasExpirationDate = lease.leaseExpirationDate;
-      
+
       return hasLeaseId && hasEffectiveDate && hasExpirationDate;
     });
-        
+
     return filtered
       .map((lease, index) => {
         const effectiveDateField = lease.leaseEffectiveDate;
         const expirationDateField = lease.leaseExpirationDate;
-        
+
         const effectiveDate = getDateValue(effectiveDateField);
         const expirationDate = getDateValue(expirationDateField);
-        
+
         if (!effectiveDate || !expirationDate) {
           return {
             id: lease.id || index,

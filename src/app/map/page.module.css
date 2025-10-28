@@ -1,0 +1,15 @@
+.mapContainer {
+  width: 100%;
+  height: 600px;
+  border-radius: 8px;
+}
+
+.streetViewContainer {
+  width: 100%;
+  height: 0px;
+  overflow: hidden;
+  border-radius: 8px;
+  margin-top: 16px;
+  transition: height 0.3s ease;
+}
+

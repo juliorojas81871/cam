@@ -82,7 +82,7 @@ const schema = { owned, leases };
 // Data cleansing utilities
 function hasAddressInName(name) {
   if (!name) return false;
-  
+
   const addressPatterns = [
     /\d+\s+[A-Za-z]+\s+(st|street|ave|avenue|rd|road|blvd|boulevard|dr|drive|ln|lane|ct|court|way|pl|place)/i,
     /\d+\s+[A-Za-z]+\s+[A-Za-z]+\s+(st|street|ave|avenue|rd|road|blvd|boulevard|dr|drive|ln|lane|ct|court|way|pl|place)/i,
@@ -90,25 +90,25 @@ function hasAddressInName(name) {
     /,\s*\d{5}(-\d{4})?/,
     /(suite|ste|floor|fl|room|rm)\s*\d+/i,
   ];
-  
+
   return addressPatterns.some(pattern => pattern.test(name));
 }
 
 function cleanBuildingName(name) {
   if (!name) return name;
-  
+
   let cleaned = name.trim();
-  
+
   const delimiters = [' - ', ' – ', ', ', ' / ', ': ', ' | ', ' @ ', ' at '];
-  
+
   for (const delimiter of delimiters) {
     if (cleaned.includes(delimiter)) {
       const parts = cleaned.split(delimiter).map(part => part.trim());
-      
+
       if (parts.length >= 2) {
         let bestPart = parts[0];
         let bestScore = scoreAsNonAddress(parts[0]);
-        
+
         for (let i = 1; i < parts.length; i++) {
           const score = scoreAsNonAddress(parts[i]);
           if (score > bestScore) {
@@ -116,45 +116,45 @@ function cleanBuildingName(name) {
             bestScore = score;
           }
         }
-        
+
         cleaned = bestPart;
         break;
       }
     }
   }
-  
+
   cleaned = cleaned.replace(/,?\s*\d{5}(-\d{4})?\s*$/, '');
   cleaned = cleaned.replace(/,?\s*(suite|ste|floor|fl|room|rm)\s*\d+\s*$/i, '');
   cleaned = cleaned.replace(/\s+/g, ' ').trim();
   cleaned = cleaned.replace(/^[,\-\s]+|[,\-\s]+$/g, '');
-  
+
   if (!cleaned || cleaned.length < 3) {
     return name;
   }
-  
+
   return cleaned;
 }
 
 function scoreAsNonAddress(text) {
   if (!text || text.length < 2) return 0;
-  
+
   let score = 10;
-  
+
   if (/^\d/.test(text)) score -= 15;
   if (/\b(st|street|ave|avenue|rd|road|blvd|boulevard|dr|drive|ln|lane|ct|court|way|pl|place)\b/i.test(text)) score -= 10;
   if (/\d{5}(-\d{4})?/.test(text)) score -= 20;
   if (/\b(center|centre|plaza|tower|building|complex|mall|square|park|place)\b/i.test(text)) score += 15;
-  
+
   const capitalizedWords = text.match(/\b[A-Z][a-z]+/g);
   if (capitalizedWords && capitalizedWords.length > 1) score += 5;
   if (text.length < 5) score -= 5;
-  
+
   return score;
 }
 
 function processRowData(row) {
   const assetName = row['Real Property Asset Name'] || '';
-  
+
   return {
     ...row,
     cleanedBuildingName: cleanBuildingName(assetName),

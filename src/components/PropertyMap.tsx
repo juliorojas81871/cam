@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
 import { Box, Paper, Typography, Alert } from '@mui/material';
 import { Owned } from '@/lib/schema';
+import styles from './PropertyMap.module.css';
 
 interface MapComponentProps {
   properties: Owned[];
@@ -288,10 +289,19 @@ const MapComponent: React.FC<MapComponentProps> = ({ properties, center, zoom })
   useEffect(() => {
     return () => {
       markersRef.current.forEach(marker => {
-        if (marker instanceof google.maps.marker.AdvancedMarkerElement) {
-          marker.map = null;
-        } else if (marker instanceof google.maps.OverlayView) {
-          marker.setMap(null);
+        try {
+          // Check if AdvancedMarkerElement exists and marker is an instance of it
+          if (typeof google !== 'undefined' &&
+              google.maps?.marker?.AdvancedMarkerElement &&
+              marker instanceof google.maps.marker.AdvancedMarkerElement) {
+            marker.map = null;
+          } else if (typeof google !== 'undefined' &&
+                     google.maps?.OverlayView &&
+                     marker instanceof google.maps.OverlayView) {
+            marker.setMap(null);
+          }
+        } catch (error) {
+          console.warn('Error cleaning up marker:', error);
         }
       });
 
@@ -302,7 +312,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ properties, center, zoom })
     };
   }, []);
 
-  return <div ref={mapRef} style={{ width: '100%', height: '500px', borderRadius: '4px' }} />;
+  return <div ref={mapRef} className={styles.mapContainer} />;
 };
 
 interface PropertyMapProps {
